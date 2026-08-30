@@ -36,11 +36,46 @@ have to enter **inside** the app instead. That is what Pinhole does — a Mac-si
 daemon serves JPEG frames over loopback, and a Swift package inside your app
 turns them into real `CMSampleBuffer`s.
 
-## Quick start
+## Install
 
-**1. Build and install the menu bar app.**
+### Homebrew
 
 ```bash
+brew tap FarhanFDjabari/pinhole https://github.com/FarhanFDjabari/Pinhole.git
+brew trust --formula FarhanFDjabari/pinhole/pinhole
+brew install pinhole
+ln -sfn "$(brew --prefix pinhole)/Pinhole.app" /Applications/Pinhole.app
+open -a Pinhole
+```
+
+Two of those need a word of explanation.
+
+**`brew trust`** — Homebrew 6 will not load a formula from a tap outside
+`Homebrew/*` until you grant it, because a formula is Ruby that runs on your
+machine. Read [`Formula/pinhole.rb`](Formula/pinhole.rb) first; it is about
+forty lines.
+
+**`brew install` builds from source**, so it needs Xcode and takes roughly half
+a minute. That is deliberate. Shipping a prebuilt app would mean a Homebrew
+*cask*, and a downloaded ad-hoc-signed app is quarantined by macOS and rejected
+by Gatekeeper — the only clean fix is notarization, which costs a paid Apple
+Developer account this project does without. **A binary built on the machine it
+runs on is never quarantined**, so building sidesteps the whole problem. Every
+user of a tool for the iOS Simulator already has Xcode.
+
+The symlink is what puts it in Spotlight and makes `open -a Pinhole` work;
+Homebrew keeps the app itself in its Cellar.
+
+```bash
+brew upgrade pinhole                          # rebuild at the newest tag
+brew uninstall pinhole && rm /Applications/Pinhole.app
+```
+
+### From source
+
+```bash
+git clone https://github.com/FarhanFDjabari/Pinhole.git
+cd Pinhole
 ./scripts/build-menubar.sh
 cp -R .build-dev/Pinhole.app /Applications/Pinhole.app
 open -a Pinhole
@@ -50,9 +85,15 @@ The copy is a one-time step. Afterwards `build-menubar.sh` replaces the
 installed copy on every run — the camera grant follows the code signature, not
 the path, so it never re-prompts.
 
+### First launch
+
 The app starts its daemon immediately and defaults to your Mac's camera, so the
 first launch asks for camera access. **Approve it.** If you miss the prompt:
 System Settings → Privacy & Security → Camera → **Pinhole**.
+
+## Quick start
+
+**1. Install the menu bar app** — see [Install](#install) above.
 
 **2. Confirm frames are going out.**
 
@@ -233,6 +274,7 @@ Length-prefixed JPEG frames, little-endian, 28-byte header
 
 | Path | What it is |
 |---|---|
+| `Formula/pinhole.rb` | Homebrew formula, so the repo doubles as its own tap |
 | `Package.swift` | Package manifest. At the root because SwiftPM resolves a remote package only from the repository root |
 | `PinholeKit/` | Sources of the Swift package you add to your iOS app — vends `CMSampleBuffer`s from a chosen source |
 | `pinholed/` | macOS CLI that captures the Mac's webcam (or a file) and serves JPEG frames over TCP |

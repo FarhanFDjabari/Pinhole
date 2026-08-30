@@ -50,6 +50,7 @@ To work on the daemon alone:
 
 | Path | What it is |
 |---|---|
+| `Formula/pinhole.rb` | Homebrew formula; the repo is its own tap |
 | `Package.swift` | Package manifest, at the root so a remote `.package(url:)` can resolve it |
 | `PinholeKit/` | Sources of the Swift package linked into the iOS app under test |
 | `pinholed/` | macOS frame server — captures, encodes, broadcasts |
@@ -101,6 +102,31 @@ useful check is looking at it. Before opening a PR, verify by hand:
 3. An iOS Simulator app with `PINHOLE_SOURCE=network` receives those same frames
 4. Resolution and frame-rate switching restart the daemon cleanly
 5. Quitting the app leaves no orphaned `pinholed` — `pgrep pinholed` is empty
+
+## Cutting a release
+
+The formula builds from a tag tarball, so its `url` and `sha256` must be
+updated after the tag exists, not before:
+
+```bash
+git tag -a 0.1.4 -m "Pinhole 0.1.4" && git push origin 0.1.4
+curl -sL https://github.com/FarhanFDjabari/Pinhole/archive/refs/tags/0.1.4.tar.gz | shasum -a 256
+```
+
+Put that digest in `Formula/pinhole.rb`, commit, and verify against a clean
+tap before announcing anything:
+
+```bash
+brew untap FarhanFDjabari/pinhole
+brew tap FarhanFDjabari/pinhole https://github.com/FarhanFDjabari/Pinhole.git
+brew trust --formula FarhanFDjabari/pinhole/pinhole
+brew install pinhole && brew test pinhole
+```
+
+Do not ship a cask. A downloaded ad-hoc-signed app is quarantined and
+Gatekeeper rejects it; Homebrew 6 has no `--no-quarantine` opt-out, and
+clearing the flag by hand needs App Management permission. Notarization is the
+only real fix and needs a paid Apple Developer account.
 
 If you add a source, say in the PR which of these you exercised.
 
