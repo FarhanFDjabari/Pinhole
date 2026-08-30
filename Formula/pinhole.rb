@@ -21,14 +21,19 @@ class Pinhole < Formula
 
   def caveats
     <<~CAVEATS
-      Pinhole is a menu bar app. Link it into /Applications so Spotlight and
-      `open -a Pinhole` can find it:
+      Pinhole is a menu bar app. Copy it into /Applications:
 
-        ln -sfn #{opt_prefix}/Pinhole.app /Applications/Pinhole.app
-
-      Then launch it:
-
+        cp -R #{opt_prefix}/Pinhole.app /Applications/Pinhole.app
         open -a Pinhole
+
+      Copy rather than symlink: Spotlight indexes real bundles, not symlinks,
+      and does not index the Cellar at all, so a symlinked app never appears in
+      the Spotlight menu.
+
+      The copy does not follow `brew upgrade`. After upgrading, repeat it:
+
+        rm -rf /Applications/Pinhole.app
+        cp -R #{opt_prefix}/Pinhole.app /Applications/Pinhole.app
 
       On first launch it asks for camera access. Approve it, or the daemon
       exits immediately whenever the source is the Mac camera.

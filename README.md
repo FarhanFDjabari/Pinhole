@@ -44,7 +44,7 @@ turns them into real `CMSampleBuffer`s.
 brew tap FarhanFDjabari/pinhole https://github.com/FarhanFDjabari/Pinhole.git
 brew trust --formula FarhanFDjabari/pinhole/pinhole
 brew install pinhole
-ln -sfn "$(brew --prefix pinhole)/Pinhole.app" /Applications/Pinhole.app
+cp -R "$(brew --prefix pinhole)/Pinhole.app" /Applications/Pinhole.app
 open -a Pinhole
 ```
 
@@ -63,12 +63,25 @@ Developer account this project does without. **A binary built on the machine it
 runs on is never quarantined**, so building sidesteps the whole problem. Every
 user of a tool for the iOS Simulator already has Xcode.
 
-The symlink is what puts it in Spotlight and makes `open -a Pinhole` work;
-Homebrew keeps the app itself in its Cellar.
+Homebrew keeps the app in its Cellar, which is not somewhere macOS looks for
+applications, so the copy is what makes Pinhole a normal installed app.
+
+**Copy, not symlink.** Spotlight indexes real bundles and does not index the
+Cellar, so a symlinked app runs fine from `open -a Pinhole` but never appears in
+the Spotlight menu.
+
+The copy does not follow `brew upgrade`, so refresh it afterwards:
 
 ```bash
-brew upgrade pinhole                          # rebuild at the newest tag
-brew uninstall pinhole && rm /Applications/Pinhole.app
+brew upgrade pinhole
+rm -rf /Applications/Pinhole.app
+cp -R "$(brew --prefix pinhole)/Pinhole.app" /Applications/Pinhole.app
+```
+
+To remove it entirely:
+
+```bash
+brew uninstall pinhole && rm -rf /Applications/Pinhole.app
 ```
 
 ### From source
@@ -303,6 +316,7 @@ system extension, or SIP disabled.
 | `failed to listen on port 47009` | Another `pinholed` is already running — quit it, or the app's copy |
 | `unable to resolve module dependency` after project edits | `xcodebuild -resolvePackageDependencies`, or Xcode → File → Packages → Resolve Package Versions |
 | Menu says `0 clients` while the app runs | The app is on a non-`network` source, or connected before the daemon started — it retries every second |
+| Spotlight cannot find Pinhole after a Homebrew install | `/Applications/Pinhole.app` is a symlink. Spotlight does not index symlinks or the Cellar — replace it with a copy: `rm -f /Applications/Pinhole.app && cp -R "$(brew --prefix pinhole)/Pinhole.app" /Applications/Pinhole.app` |
 
 ## Credit — and why this exists separately
 
