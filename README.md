@@ -36,11 +36,38 @@ have to enter **inside** the app instead. That is what Pinhole does — a Mac-si
 daemon serves JPEG frames over loopback, and a Swift package inside your app
 turns them into real `CMSampleBuffer`s.
 
-## Quick start
+## Install
 
-**1. Build and install the menu bar app.**
+Two routes. Homebrew is quicker; building from source avoids the Gatekeeper
+caveat below and is what you want if you plan to change anything.
+
+### Homebrew
 
 ```bash
+brew tap FarhanFDjabari/pinhole https://github.com/FarhanFDjabari/Pinhole.git
+brew install --cask --no-quarantine pinhole
+open -a Pinhole
+```
+
+> [!IMPORTANT]
+> **Why `--no-quarantine` is needed, and what it costs you.**
+>
+> Pinhole is ad-hoc signed, not notarized — notarization needs a paid Apple
+> Developer account, which this project otherwise does without. macOS flags
+> anything downloaded, and Gatekeeper rejects a quarantined app that is not
+> notarized, so without this flag the app will not launch.
+>
+> `--no-quarantine` tells Homebrew to skip that flag, which means **macOS does
+> not verify this download for you**. You are trusting the binary on the
+> strength of this repository instead. If you would rather not, build from
+> source below — it is two commands and produces the same app, and a locally
+> built binary is never quarantined in the first place.
+
+### From source
+
+```bash
+git clone https://github.com/FarhanFDjabari/Pinhole.git
+cd Pinhole
 ./scripts/build-menubar.sh
 cp -R .build-dev/Pinhole.app /Applications/Pinhole.app
 open -a Pinhole
@@ -50,9 +77,15 @@ The copy is a one-time step. Afterwards `build-menubar.sh` replaces the
 installed copy on every run — the camera grant follows the code signature, not
 the path, so it never re-prompts.
 
+### First launch
+
 The app starts its daemon immediately and defaults to your Mac's camera, so the
 first launch asks for camera access. **Approve it.** If you miss the prompt:
 System Settings → Privacy & Security → Camera → **Pinhole**.
+
+## Quick start
+
+**1. Install the menu bar app** — see [Install](#install) above.
 
 **2. Confirm frames are going out.**
 
@@ -233,6 +266,7 @@ Length-prefixed JPEG frames, little-endian, 28-byte header
 
 | Path | What it is |
 |---|---|
+| `Casks/pinhole.rb` | Homebrew cask, so the repo doubles as its own tap |
 | `Package.swift` | Package manifest. At the root because SwiftPM resolves a remote package only from the repository root |
 | `PinholeKit/` | Sources of the Swift package you add to your iOS app — vends `CMSampleBuffer`s from a chosen source |
 | `pinholed/` | macOS CLI that captures the Mac's webcam (or a file) and serves JPEG frames over TCP |
@@ -261,6 +295,7 @@ system extension, or SIP disabled.
 | `failed to listen on port 47009` | Another `pinholed` is already running — quit it, or the app's copy |
 | `unable to resolve module dependency` after project edits | `xcodebuild -resolvePackageDependencies`, or Xcode → File → Packages → Resolve Package Versions |
 | Menu says `0 clients` while the app runs | The app is on a non-`network` source, or connected before the daemon started — it retries every second |
+| `"Pinhole" is damaged and can't be opened` after a Homebrew install | Installed without `--no-quarantine`. Clear the flag: `xattr -dr com.apple.quarantine /Applications/Pinhole.app` |
 
 ## Credit — and why this exists separately
 
