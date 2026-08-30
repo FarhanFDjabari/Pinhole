@@ -1,6 +1,6 @@
 //
 //  Server.swift
-//  Part of simcamd — see main.swift.
+//  Part of pinholed — see main.swift.
 //
 
 import AVFoundation
@@ -12,7 +12,7 @@ import Network
 
 final class FrameServer {
     private let listener: NWListener
-    private let queue = DispatchQueue(label: "simcamd.server")
+    private let queue = DispatchQueue(label: "pinholed.server")
     private var connections: [ObjectIdentifier: NWConnection] = [:]
     private var frames = 0
 
@@ -21,7 +21,7 @@ final class FrameServer {
         // rejected outright, not quietly bind alongside the first.
         let parameters = NWParameters.tcp
         guard let nwPort = NWEndpoint.Port(rawValue: port) else {
-            throw NSError(domain: "simcamd", code: 1)
+            throw NSError(domain: "pinholed", code: 1)
         }
         listener = try NWListener(using: parameters, on: nwPort)
     }

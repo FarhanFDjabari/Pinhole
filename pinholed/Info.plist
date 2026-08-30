@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-	<key>CFBundleIdentifier</key><string>com.local.simcamd</string>
-	<key>CFBundleName</key><string>simcamd</string>
+	<key>CFBundleIdentifier</key><string>com.local.pinholed</string>
+	<key>CFBundleName</key><string>pinholed</string>
 	<key>CFBundleShortVersionString</key><string>1.0</string>
 	<key>CFBundleVersion</key><string>1</string>
-	<key>NSCameraUsageDescription</key><string>simcamd streams this Mac's camera to the iOS Simulator.</string>
+	<key>NSCameraUsageDescription</key><string>pinholed streams this Mac's camera to the iOS Simulator.</string>
 </dict></plist>

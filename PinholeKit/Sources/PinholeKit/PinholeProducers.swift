@@ -1,5 +1,5 @@
 //
-//  SimCamProducers.swift
+//  PinholeProducers.swift
 //  Local frame producers: animated test pattern, still image (also backs the
 //  QR source), and looped video file playback.
 //
@@ -9,7 +9,7 @@ import CoreVideo
 import UIKit
 
 /// Drives `tick()` at a fixed rate off a display link.
-class SimCamTimedProducer: NSObject, SimCamFrameProducer {
+class PinholeTimedProducer: NSObject, PinholeFrameProducer {
     var onFrame: ((CVPixelBuffer, Double) -> Void)?
 
     let size: CGSize
@@ -47,7 +47,7 @@ class SimCamTimedProducer: NSObject, SimCamFrameProducer {
     func frame(at time: Double) -> CVPixelBuffer? { nil }
 }
 
-final class SimCamStillProducer: SimCamTimedProducer {
+final class PinholeStillProducer: PinholeTimedProducer {
     private var cached: CVPixelBuffer?
     private let image: UIImage
 
@@ -58,13 +58,13 @@ final class SimCamStillProducer: SimCamTimedProducer {
 
     override func frame(at time: Double) -> CVPixelBuffer? {
         if cached == nil {
-            cached = SimCamPixelBuffer.buffer(from: image, size: size)
+            cached = PinholePixelBuffer.buffer(from: image, size: size)
         }
         return cached
     }
 }
 
-final class SimCamTestPatternProducer: SimCamTimedProducer {
+final class PinholeTestPatternProducer: PinholeTimedProducer {
     private var frameCount = 0
 
     private static let bars: [UIColor] = [
@@ -72,13 +72,13 @@ final class SimCamTestPatternProducer: SimCamTimedProducer {
     ]
 
     override func frame(at time: Double) -> CVPixelBuffer? {
-        guard let buffer = SimCamPixelBuffer.make(width: Int(size.width), height: Int(size.height)) else {
+        guard let buffer = PinholePixelBuffer.make(width: Int(size.width), height: Int(size.height)) else {
             return nil
         }
         frameCount += 1
         let count = frameCount
 
-        SimCamPixelBuffer.draw(into: buffer) { context, canvas in
+        PinholePixelBuffer.draw(into: buffer) { context, canvas in
             let barWidth = canvas.width / CGFloat(Self.bars.count)
             for (index, color) in Self.bars.enumerated() {
                 context.setFillColor(color.cgColor)
@@ -91,7 +91,7 @@ final class SimCamTestPatternProducer: SimCamTimedProducer {
             context.fill(CGRect(x: sweepX, y: 0, width: 8, height: canvas.height))
 
             UIGraphicsPushContext(context)
-            let text = String(format: "SimCam  frame %d  %.1fs", count, time)
+            let text = String(format: "Pinhole  frame %d  %.1fs", count, time)
             let attributes: [NSAttributedString.Key: Any] = [
                 .font: UIFont.monospacedSystemFont(ofSize: canvas.height * 0.06, weight: .bold),
                 .foregroundColor: UIColor.black,
@@ -106,7 +106,7 @@ final class SimCamTestPatternProducer: SimCamTimedProducer {
     }
 }
 
-final class SimCamVideoProducer: NSObject, SimCamFrameProducer {
+final class PinholeVideoProducer: NSObject, PinholeFrameProducer {
     var onFrame: ((CVPixelBuffer, Double) -> Void)?
 
     private let url: URL

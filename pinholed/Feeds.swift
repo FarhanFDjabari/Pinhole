@@ -1,6 +1,6 @@
 //
 //  Feeds.swift
-//  Part of simcamd — see main.swift.
+//  Part of pinholed — see main.swift.
 //
 
 import AppKit
@@ -51,7 +51,7 @@ final class CameraSource: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
             device = discovery.devices.first
         }
         guard let device else {
-            throw NSError(domain: "simcamd", code: 2, userInfo: [
+            throw NSError(domain: "pinholed", code: 2, userInfo: [
                 NSLocalizedDescriptionKey: "no video capture device (try --list, or --file to stream a video)"])
         }
         print("capturing: \(device.localizedName)")
@@ -60,16 +60,16 @@ final class CameraSource: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
         session.sessionPreset = .high
         let input = try AVCaptureDeviceInput(device: device)
         guard session.canAddInput(input) else {
-            throw NSError(domain: "simcamd", code: 3, userInfo: [NSLocalizedDescriptionKey: "cannot add camera input"])
+            throw NSError(domain: "pinholed", code: 3, userInfo: [NSLocalizedDescriptionKey: "cannot add camera input"])
         }
         session.addInput(input)
 
         let output = AVCaptureVideoDataOutput()
         output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
         output.alwaysDiscardsLateVideoFrames = true
-        output.setSampleBufferDelegate(self, queue: DispatchQueue(label: "simcamd.capture"))
+        output.setSampleBufferDelegate(self, queue: DispatchQueue(label: "pinholed.capture"))
         guard session.canAddOutput(output) else {
-            throw NSError(domain: "simcamd", code: 4, userInfo: [NSLocalizedDescriptionKey: "cannot add video output"])
+            throw NSError(domain: "pinholed", code: 4, userInfo: [NSLocalizedDescriptionKey: "cannot add video output"])
         }
         session.addOutput(output)
         session.commitConfiguration()
@@ -85,7 +85,7 @@ final class CameraSource: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate
         guard let data = jpeg(from: CIImage(cvPixelBuffer: imageBuffer), size: size, quality: options.quality) else {
             return
         }
-        onFrame(SimCamWire.encode(jpeg: data, width: options.width, height: options.height,
+        onFrame(PinholeWire.encode(jpeg: data, width: options.width, height: options.height,
                                   timestamp: Date().timeIntervalSince(start)))
     }
 }
@@ -124,7 +124,7 @@ final class FileSource {
         self.player = player
         print("streaming file: \(url.lastPathComponent)")
 
-        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue(label: "simcamd.file"))
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue(label: "pinholed.file"))
         timer.schedule(deadline: .now(), repeating: 1.0 / Double(options.fps))
         timer.setEventHandler { [weak self] in self?.tick() }
         timer.resume()
@@ -141,7 +141,7 @@ final class FileSource {
         guard let data = jpeg(from: CIImage(cvPixelBuffer: buffer), size: size, quality: options.quality) else {
             return
         }
-        onFrame(SimCamWire.encode(jpeg: data, width: options.width, height: options.height,
+        onFrame(PinholeWire.encode(jpeg: data, width: options.width, height: options.height,
                                   timestamp: Date().timeIntervalSince(start)))
     }
 }
@@ -163,12 +163,12 @@ final class StillSource {
 
     static func image(at url: URL, options: Options, onFrame: @escaping (Data) -> Void) throws -> StillSource {
         guard let source = CIImage(contentsOf: url) else {
-            throw NSError(domain: "simcamd", code: 5, userInfo: [
+            throw NSError(domain: "pinholed", code: 5, userInfo: [
                 NSLocalizedDescriptionKey: "cannot read image at \(url.path)"])
         }
         let size = CGSize(width: options.width, height: options.height)
         guard let frame = jpeg(from: source, size: size, quality: options.quality) else {
-            throw NSError(domain: "simcamd", code: 6, userInfo: [
+            throw NSError(domain: "pinholed", code: 6, userInfo: [
                 NSLocalizedDescriptionKey: "cannot encode image at \(url.path)"])
         }
         print("streaming image: \(url.lastPathComponent)")
@@ -176,11 +176,11 @@ final class StillSource {
     }
 
     func run() {
-        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue(label: "simcamd.still"))
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue(label: "pinholed.still"))
         timer.schedule(deadline: .now(), repeating: 1.0 / Double(options.fps))
         timer.setEventHandler { [weak self] in
             guard let self else { return }
-            self.onFrame(SimCamWire.encode(jpeg: self.frame, width: self.options.width,
+            self.onFrame(PinholeWire.encode(jpeg: self.frame, width: self.options.width,
                                            height: self.options.height,
                                            timestamp: Date().timeIntervalSince(self.start)))
         }
@@ -217,7 +217,7 @@ final class PatternSource {
 
     func run() {
         print("streaming test pattern")
-        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue(label: "simcamd.pattern"))
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue(label: "pinholed.pattern"))
         timer.schedule(deadline: .now(), repeating: 1.0 / Double(options.fps))
         timer.setEventHandler { [weak self] in self?.tick() }
         timer.resume()
@@ -246,7 +246,7 @@ final class PatternSource {
         context.setFillColor(CGColor(gray: 0, alpha: 0.65))
         context.fill(CGRect(x: sweepX, y: 0, width: 8, height: CGFloat(height)))
 
-        let label = String(format: "SimCam  frame %d  %.1fs", frames, elapsed)
+        let label = String(format: "Pinhole  frame %d  %.1fs", frames, elapsed)
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.monospacedSystemFont(ofSize: CGFloat(height) * 0.06, weight: .bold),
             .foregroundColor: NSColor.black,
@@ -263,7 +263,7 @@ final class PatternSource {
                               quality: options.quality)
         else { return }
 
-        onFrame(SimCamWire.encode(jpeg: data, width: width, height: height, timestamp: elapsed))
+        onFrame(PinholeWire.encode(jpeg: data, width: width, height: height, timestamp: elapsed))
     }
 }
 

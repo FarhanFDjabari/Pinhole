@@ -1,5 +1,5 @@
 //
-//  SimCamPixelBuffer.swift
+//  PinholePixelBuffer.swift
 //  CVPixelBuffer creation and drawing helpers shared by the frame producers.
 //
 
@@ -8,7 +8,7 @@ import CoreImage
 import CoreVideo
 import UIKit
 
-enum SimCamPixelBuffer {
+enum PinholePixelBuffer {
 
     static func make(width: Int, height: Int) -> CVPixelBuffer? {
         var buffer: CVPixelBuffer?
@@ -25,7 +25,7 @@ enum SimCamPixelBuffer {
 
     /// Draws into a locked BGRA buffer. The context keeps Core Graphics'
     /// bottom-left origin so CGImages land upright; text drawing flips
-    /// locally (see SimCamTestPatternProducer).
+    /// locally (see PinholeTestPatternProducer).
     static func draw(into buffer: CVPixelBuffer, _ body: (CGContext, CGSize) -> Void) {
         CVPixelBufferLockBaseAddress(buffer, [])
         defer { CVPixelBufferUnlockBaseAddress(buffer, []) }

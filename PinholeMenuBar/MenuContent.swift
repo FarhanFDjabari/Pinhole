@@ -22,7 +22,7 @@ struct MenuContent: View {
 
         Button("Open Control Panel…") {
             NSApp.activate(ignoringOtherApps: true)
-            openWindow(id: SimCamMenuBarApp.controlPanelID)
+            openWindow(id: PinholeMenuBarApp.controlPanelID)
         }
         .keyboardShortcut("o")
 
@@ -51,14 +51,14 @@ struct MenuContent: View {
 
         Divider()
 
-        Button("Copy SIMCAM_SOURCE=network") {
+        Button("Copy PINHOLE_SOURCE=network") {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString("network", forType: .string)
         }
 
         Divider()
 
-        Button("Quit SimCam") {
+        Button("Quit Pinhole") {
             controller.stop()
             NSApplication.shared.terminate(nil)
         }

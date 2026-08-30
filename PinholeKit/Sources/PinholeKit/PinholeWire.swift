@@ -1,12 +1,12 @@
 //
-//  SimCamWire.swift
-//  Frame wire format shared by the iOS client (SimCamKit) and the macOS
-//  streaming daemon (simcamd). Compiled into both — keep it dependency-free
+//  PinholeWire.swift
+//  Frame wire format shared by the iOS client (PinholeKit) and the macOS
+//  streaming daemon (pinholed). Compiled into both — keep it dependency-free
 //  beyond Foundation so `swiftc` can pull it straight into the daemon.
 //
 //  Layout, little-endian, 28-byte header followed by payload:
 //
-//    0  magic      UInt32  'SCF1'
+//    0  magic      UInt32  'PHF1'
 //    4  payloadLen UInt32
 //    8  width      UInt32
 //   12  height     UInt32
@@ -18,8 +18,8 @@
 
 import Foundation
 
-public enum SimCamWire {
-    public static let magic: UInt32 = 0x53434631  // "SCF1"
+public enum PinholeWire {
+    public static let magic: UInt32 = 0x50484631  // "PHF1"
     public static let headerSize = 28
     public static let defaultPort: UInt16 = 47009
 

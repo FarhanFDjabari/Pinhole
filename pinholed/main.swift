@@ -1,19 +1,19 @@
 //
-//  simcamd — macOS frame server for SimCamKit.
+//  pinholed — macOS frame server for PinholeKit.
 //
 //  Captures the Mac's webcam (or loops a video/image file) and serves JPEG
 //  frames over TCP on 127.0.0.1. The iOS Simulator shares the host network
-//  stack, so an app linking SimCamKit reaches this with
-//  SimCamSource.network(host: "127.0.0.1", port: 47009).
+//  stack, so an app linking PinholeKit reaches this with
+//  PinholeSource.network(host: "127.0.0.1", port: 47009).
 //
 //  Plain userspace networking — no system extension, no entitlements, no SIP
-//  changes. Build with scripts/build-simcamd.sh.
+//  changes. Build with scripts/build-pinholed.sh.
 //
 //  Usage:
-//    simcamd                          # default webcam, 1280x720, 30fps
-//    simcamd --file ~/clip.mov        # loop a video file instead
-//    simcamd --port 47009 --fps 24 --width 1280 --height 720
-//    simcamd --list                   # show available capture devices
+//    pinholed                          # default webcam, 1280x720, 30fps
+//    pinholed --file ~/clip.mov        # loop a video file instead
+//    pinholed --port 47009 --fps 24 --width 1280 --height 720
+//    pinholed --list                   # show available capture devices
 //
 
 import AVFoundation
@@ -22,7 +22,7 @@ import Foundation
 import Network
 
 struct Options {
-    var port: UInt16 = SimCamWire.defaultPort
+    var port: UInt16 = PinholeWire.defaultPort
     var fps: Int = 30
     var width: Int = 1280
     var height: Int = 720
@@ -57,7 +57,7 @@ func parseOptions() -> Options {
             exit(0)
         case "-h", "--help":
             print("""
-            usage: simcamd [source] [options]
+            usage: pinholed [source] [options]
               sources:  (default: webcam)
                 --pattern            animated colour bars, no camera needed
                 --qr TEXT            generated QR code
@@ -88,7 +88,7 @@ func listDevices() {
 }
 
 /// Camera access needs an embedded Info.plist carrying NSCameraUsageDescription
-/// (see scripts/build-simcamd.sh) — without it macOS denies silently.
+/// (see scripts/build-pinholed.sh) — without it macOS denies silently.
 func ensureCameraAccess() {
     switch AVCaptureDevice.authorizationStatus(for: .video) {
     case .authorized:
@@ -103,7 +103,7 @@ func ensureCameraAccess() {
     default:
         break
     }
-    FileHandle.standardError.write("camera access denied — enable simcamd in System Settings → Privacy & Security → Camera\n".data(using: .utf8)!)
+    FileHandle.standardError.write("camera access denied — enable pinholed in System Settings → Privacy & Security → Camera\n".data(using: .utf8)!)
     exit(1)
 }
 
@@ -117,7 +117,7 @@ do {
     exit(1)
 }
 server.start()
-print("simcamd listening on 127.0.0.1:\(options.port)  (\(options.width)x\(options.height) @ \(options.fps)fps)")
+print("pinholed listening on 127.0.0.1:\(options.port)  (\(options.width)x\(options.height) @ \(options.fps)fps)")
 
 var cameraSource: CameraSource?
 var fileSource: FileSource?
@@ -136,7 +136,7 @@ do {
         let size = CGSize(width: options.width, height: options.height)
         guard let code = QRFrame.image(payload: payload, size: size),
               let frame = jpeg(from: code, size: size, quality: options.quality) else {
-            throw NSError(domain: "simcamd", code: 7, userInfo: [
+            throw NSError(domain: "pinholed", code: 7, userInfo: [
                 NSLocalizedDescriptionKey: "cannot render QR code"])
         }
         print("streaming QR code: \(payload)")
@@ -165,12 +165,12 @@ _ = fileSource
 _ = stillSource
 _ = patternSource
 
-// SimCam.app runs this as a child. If the app dies without terminating us, the
+// Pinhole.app runs this as a child. If the app dies without terminating us, the
 // port stays held and the next launch silently competes with a zombie — so
 // watch for reparenting to launchd and exit.
 let parent = getppid()
 if parent != 1 {
-    let watchdog = DispatchSource.makeTimerSource(queue: DispatchQueue(label: "simcamd.watchdog"))
+    let watchdog = DispatchSource.makeTimerSource(queue: DispatchQueue(label: "pinholed.watchdog"))
     watchdog.schedule(deadline: .now() + 1, repeating: 1)
     watchdog.setEventHandler {
         if getppid() != parent { exit(0) }

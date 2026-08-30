@@ -12,7 +12,7 @@ struct ControlPanelView: View {
     @ObservedObject var controller: DaemonController
     @StateObject private var preview = PreviewClient()
 
-    @State private var qrPayload = "https://simcam.local"
+    @State private var qrPayload = "https://pinhole.local"
     @State private var diagnostics: String?
 
     var body: some View {
@@ -186,7 +186,7 @@ struct ControlPanelView: View {
                 Button("Run Diagnostics") { diagnostics = controller.diagnostics() }
                 Button("Refresh Cameras") { controller.refreshDevices() }
                 Spacer()
-                Button("Copy SIMCAM_SOURCE=network") {
+                Button("Copy PINHOLE_SOURCE=network") {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString("network", forType: .string)
                 }

@@ -1,9 +1,9 @@
 //
 //  DaemonController.swift
-//  Runs the bundled `simcamd` and tracks what it reports.
+//  Runs the bundled `pinholed` and tracks what it reports.
 //
 //  The daemon is a child of this app, so macOS attributes its camera access to
-//  SimCam rather than to whichever terminal launched it — which is what makes
+//  Pinhole rather than to whichever terminal launched it — which is what makes
 //  the permission grantable at all for a command-line tool.
 //
 
@@ -85,7 +85,7 @@ final class DaemonController: ObservableObject {
 
     func start() {
         guard process == nil, let executable = Self.daemonURL else {
-            lastError = "simcamd is missing from the app bundle"
+            lastError = "pinholed is missing from the app bundle"
             return
         }
 
@@ -170,14 +170,14 @@ final class DaemonController: ObservableObject {
         let camera: String
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized: camera = "granted"
-        case .denied: camera = "DENIED — System Settings → Privacy & Security → Camera → SimCam"
+        case .denied: camera = "DENIED — System Settings → Privacy & Security → Camera → Pinhole"
         case .restricted: camera = "restricted by policy"
         case .notDetermined: camera = "not yet requested"
         @unknown default: camera = "unknown"
         }
 
         return """
-        SimCam diagnostics
+        Pinhole diagnostics
 
         daemon:      \(isRunning ? "running" : "stopped")
         status:      \(status)
@@ -192,7 +192,7 @@ final class DaemonController: ObservableObject {
         error:       \(lastError ?? "none")
 
         In the iOS app, set the scheme environment variable
-        SIMCAM_SOURCE=network and link SimCamKit to every app target.
+        PINHOLE_SOURCE=network and link PinholeKit to every app target.
         """
     }
 
@@ -208,13 +208,13 @@ final class DaemonController: ObservableObject {
             } else if line.contains("client disconnected") {
                 clientCount = max(0, clientCount - 1)
             } else if line.contains("camera access denied") {
-                lastError = "Camera access denied — enable SimCam in System Settings → Privacy & Security → Camera"
+                lastError = "Camera access denied — enable Pinhole in System Settings → Privacy & Security → Camera"
                 status = "Camera denied"
             } else if let range = line.range(of: "sent "), line.contains(" frames") {
                 let digits = line[range.upperBound...].prefix { $0.isNumber }
                 framesSent = Int(digits) ?? framesSent
             } else if line.contains("failed to listen") {
-                lastError = "Port \(Self.port) is already in use — another simcamd is running"
+                lastError = "Port \(Self.port) is already in use — another pinholed is running"
             }
         }
     }
@@ -266,13 +266,13 @@ final class DaemonController: ObservableObject {
         case "video" where !path.isEmpty: feed = .video(URL(fileURLWithPath: path))
         case "still" where !path.isEmpty: feed = .still(URL(fileURLWithPath: path))
         case "pattern": feed = .pattern
-        case "qr": feed = .qr(defaults.string(forKey: "feedQR") ?? "https://simcam.local")
+        case "qr": feed = .qr(defaults.string(forKey: "feedQR") ?? "https://pinhole.local")
         default: feed = .webcam(device: defaults.string(forKey: "feedDevice"))
         }
     }
 
     private static var daemonURL: URL? {
-        Bundle.main.url(forAuxiliaryExecutable: "simcamd")
-            ?? Bundle.main.executableURL?.deletingLastPathComponent().appendingPathComponent("simcamd")
+        Bundle.main.url(forAuxiliaryExecutable: "pinholed")
+            ?? Bundle.main.executableURL?.deletingLastPathComponent().appendingPathComponent("pinholed")
     }
 }

@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-	<key>CFBundleExecutable</key><string>SimCam</string>
-	<key>CFBundleIconFile</key><string>SimCam</string>
-	<key>CFBundleIdentifier</key><string>com.local.simcam</string>
-	<key>CFBundleName</key><string>SimCam</string>
-	<key>CFBundleDisplayName</key><string>SimCam</string>
+	<key>CFBundleExecutable</key><string>Pinhole</string>
+	<key>CFBundleIconFile</key><string>Pinhole</string>
+	<key>CFBundleIdentifier</key><string>com.local.pinhole</string>
+	<key>CFBundleName</key><string>Pinhole</string>
+	<key>CFBundleDisplayName</key><string>Pinhole</string>
 	<key>CFBundlePackageType</key><string>APPL</string>
 	<key>CFBundleShortVersionString</key><string>1.0</string>
 	<key>CFBundleVersion</key><string>1</string>
 	<key>LSMinimumSystemVersion</key><string>14.0</string>
 	<key>LSUIElement</key><true/>
-	<key>NSCameraUsageDescription</key><string>SimCam streams this Mac's camera to the iOS Simulator.</string>
+	<key>NSCameraUsageDescription</key><string>Pinhole streams this Mac's camera to the iOS Simulator.</string>
 	<key>NSHighResolutionCapable</key><true/>
 </dict></plist>

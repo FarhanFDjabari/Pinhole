@@ -1,6 +1,6 @@
 //
-//  SimCamNetworkProducer.swift
-//  Reads SimCamWire frames from simcamd running on the host Mac. The Simulator
+//  PinholeNetworkProducer.swift
+//  Reads PinholeWire frames from pinholed running on the host Mac. The Simulator
 //  shares the host's network stack, so 127.0.0.1 is the Mac itself.
 //
 
@@ -9,12 +9,12 @@ import Foundation
 import Network
 import UIKit
 
-final class SimCamNetworkProducer: SimCamFrameProducer {
+final class PinholeNetworkProducer: PinholeFrameProducer {
     var onFrame: ((CVPixelBuffer, Double) -> Void)?
 
     private let host: String
     private let port: UInt16
-    private let queue = DispatchQueue(label: "com.simcamkit.network")
+    private let queue = DispatchQueue(label: "com.pinholekit.network")
     private var connection: NWConnection?
     private var buffer = Data()
     private var stopped = false
@@ -78,14 +78,14 @@ final class SimCamNetworkProducer: SimCamFrameProducer {
     }
 
     private func drainFrames() {
-        while let header = SimCamWire.decodeHeader(buffer) {
-            let total = SimCamWire.headerSize + header.payloadLength
+        while let header = PinholeWire.decodeHeader(buffer) {
+            let total = PinholeWire.headerSize + header.payloadLength
             guard buffer.count >= total else { return }
-            let payload = buffer.subdata(in: SimCamWire.headerSize..<total)
+            let payload = buffer.subdata(in: PinholeWire.headerSize..<total)
             buffer.removeSubrange(0..<total)
 
             guard let image = UIImage(data: payload),
-                  let pixelBuffer = SimCamPixelBuffer.buffer(
+                  let pixelBuffer = PinholePixelBuffer.buffer(
                     from: image,
                     size: CGSize(width: header.width, height: header.height))
             else { continue }

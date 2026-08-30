@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "SimCamKit",
+    name: "PinholeKit",
     platforms: [.iOS(.v15)],
     products: [
-        .library(name: "SimCamKit", targets: ["SimCamKit"])
+        .library(name: "PinholeKit", targets: ["PinholeKit"])
     ],
     targets: [
-        .target(name: "SimCamKit", path: "Sources/SimCamKit")
+        .target(name: "PinholeKit", path: "Sources/PinholeKit")
     ]
 )

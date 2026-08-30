@@ -1,5 +1,5 @@
 //
-//  SimCamSession.swift
+//  PinholeSession.swift
 //  Simulator-only stand-in for AVCaptureSession. Produces real CMSampleBuffers
 //  from a chosen source so capture pipelines can be exercised where the iOS
 //  Simulator exposes no camera devices at all (AVCaptureDevice discovery
@@ -12,15 +12,15 @@ import CoreVideo
 import UIKit
 
 @MainActor
-public protocol SimCamSampleBufferDelegate: AnyObject {
+public protocol PinholeSampleBufferDelegate: AnyObject {
     /// Mirrors the body of AVCaptureVideoDataOutputSampleBufferDelegate's
     /// captureOutput(_:didOutput:from:). AVCaptureConnection cannot be
     /// constructed without real input ports, so the connection argument is
     /// dropped rather than faked.
-    func simCam(_ session: SimCamSession, didOutput sampleBuffer: CMSampleBuffer)
+    func pinhole(_ session: PinholeSession, didOutput sampleBuffer: CMSampleBuffer)
 }
 
-public enum SimCamSource {
+public enum PinholeSource {
     /// Animated colour bars with a moving sweep and frame counter.
     case testPattern
     case image(UIImage)
@@ -28,7 +28,7 @@ public enum SimCamSource {
     case video(URL)
     /// Generated QR code carrying `payload`, centred on white.
     case qr(String)
-    /// Live frames from simcamd on the host. Simulator shares the host network
+    /// Live frames from pinholed on the host. Simulator shares the host network
     /// stack, so 127.0.0.1 reaches the Mac directly.
     case network(host: String, port: UInt16)
 }
@@ -36,21 +36,21 @@ public enum SimCamSource {
 /// Frames are always delivered on the main actor, whichever thread the
 /// underlying producer runs on.
 @MainActor
-public final class SimCamSession {
+public final class PinholeSession {
 
-    public weak var delegate: SimCamSampleBufferDelegate?
+    public weak var delegate: PinholeSampleBufferDelegate?
     public private(set) var isRunning = false
     public let frameSize: CGSize
     public let frameRate: Int
 
     /// Preview views subscribe here; keyed by token so they can detach.
     private var observers: [UUID: (CMSampleBuffer) -> Void] = [:]
-    private var producer: SimCamFrameProducer?
+    private var producer: PinholeFrameProducer?
     private var latestPixelBuffer: CVPixelBuffer?
     private var formatDescription: CMFormatDescription?
-    private let source: SimCamSource
+    private let source: PinholeSource
 
-    public init(source: SimCamSource,
+    public init(source: PinholeSource,
                 frameSize: CGSize = CGSize(width: 1280, height: 720),
                 frameRate: Int = 30) {
         self.source = source
@@ -87,7 +87,7 @@ public final class SimCamSession {
     /// Stand-in for AVCapturePhotoOutput.capturePhoto — hands back the most
     /// recent frame. Completion runs on the main queue.
     public func capturePhoto(completion: @escaping (UIImage?) -> Void) {
-        completion(latestPixelBuffer.flatMap { SimCamPixelBuffer.image(from: $0) })
+        completion(latestPixelBuffer.flatMap { PinholePixelBuffer.image(from: $0) })
     }
 
     public func addFrameObserver(_ handler: @escaping (CMSampleBuffer) -> Void) -> UUID {
@@ -105,7 +105,7 @@ public final class SimCamSession {
         let handlers = Array(observers.values)
 
         guard let sampleBuffer = makeSampleBuffer(pixelBuffer, timestamp: timestamp) else { return }
-        delegate?.simCam(self, didOutput: sampleBuffer)
+        delegate?.pinhole(self, didOutput: sampleBuffer)
         handlers.forEach { $0(sampleBuffer) }
     }
 
@@ -134,23 +134,23 @@ public final class SimCamSession {
         return sampleBuffer
     }
 
-    private static func makeProducer(for source: SimCamSource, size: CGSize, fps: Int) -> SimCamFrameProducer {
+    private static func makeProducer(for source: PinholeSource, size: CGSize, fps: Int) -> PinholeFrameProducer {
         switch source {
         case .testPattern:
-            return SimCamTestPatternProducer(size: size, fps: fps)
+            return PinholeTestPatternProducer(size: size, fps: fps)
         case .image(let image):
-            return SimCamStillProducer(image: image, size: size, fps: fps)
+            return PinholeStillProducer(image: image, size: size, fps: fps)
         case .qr(let payload):
-            return SimCamStillProducer(image: SimCamPixelBuffer.qrImage(payload, size: size), size: size, fps: fps)
+            return PinholeStillProducer(image: PinholePixelBuffer.qrImage(payload, size: size), size: size, fps: fps)
         case .video(let url):
-            return SimCamVideoProducer(url: url, size: size, fps: fps)
+            return PinholeVideoProducer(url: url, size: size, fps: fps)
         case .network(let host, let port):
-            return SimCamNetworkProducer(host: host, port: port)
+            return PinholeNetworkProducer(host: host, port: port)
         }
     }
 }
 
-protocol SimCamFrameProducer: AnyObject {
+protocol PinholeFrameProducer: AnyObject {
     var onFrame: ((CVPixelBuffer, Double) -> Void)? { get set }
     func start()
     func stop()

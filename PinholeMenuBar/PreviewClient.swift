@@ -19,7 +19,7 @@ final class PreviewClient: ObservableObject {
     @Published private(set) var measuredFPS: Double = 0
     @Published private(set) var isConnected = false
 
-    private let queue = DispatchQueue(label: "com.local.simcam.preview")
+    private let queue = DispatchQueue(label: "com.local.pinhole.preview")
     private var connection: NWConnection?
     private var buffer = Data()
     private var stopped = true
@@ -93,10 +93,10 @@ final class PreviewClient: ObservableObject {
     }
 
     private func drain() {
-        while let header = SimCamWire.decodeHeader(buffer) {
-            let total = SimCamWire.headerSize + header.payloadLength
+        while let header = PinholeWire.decodeHeader(buffer) {
+            let total = PinholeWire.headerSize + header.payloadLength
             guard buffer.count >= total else { return }
-            let payload = buffer.subdata(in: SimCamWire.headerSize..<total)
+            let payload = buffer.subdata(in: PinholeWire.headerSize..<total)
             buffer.removeSubrange(0..<total)
             if let image = NSImage(data: payload) { frame = image }
             recordFrameTime()
