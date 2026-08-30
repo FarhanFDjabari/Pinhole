@@ -61,7 +61,20 @@ fills the top of the window. If it shows a picture, the Mac side is done.
 
 **3. Add the package to your iOS project.**
 
-Xcode → File → Add Package Dependencies → **Add Local…** → select `PinholeKit/`.
+Xcode → File → Add Package Dependencies → paste the repository URL:
+
+```
+https://github.com/FarhanFDjabari/Pinhole.git
+```
+
+Or in a `Package.swift` of your own:
+
+```swift
+.package(url: "https://github.com/FarhanFDjabari/Pinhole.git", from: "0.1.0")
+```
+
+Working on Pinhole itself? Use **Add Local…** and select the repository root —
+the manifest lives there, not in `PinholeKit/`.
 
 If your project has **several app targets**, link the package to *every* target
 that compiles your source folders, not just one. Otherwise the other targets
@@ -220,7 +233,8 @@ Length-prefixed JPEG frames, little-endian, 28-byte header
 
 | Path | What it is |
 |---|---|
-| `PinholeKit/` | Swift package you add to your iOS app — vends `CMSampleBuffer`s from a chosen source |
+| `Package.swift` | Package manifest. At the root because SwiftPM resolves a remote package only from the repository root |
+| `PinholeKit/` | Sources of the Swift package you add to your iOS app — vends `CMSampleBuffer`s from a chosen source |
 | `pinholed/` | macOS CLI that captures the Mac's webcam (or a file) and serves JPEG frames over TCP |
 | `PinholeMenuBar/` | Menu bar app wrapping the daemon — control panel with live preview, source picker, diagnostics |
 | `scripts/` | `build-pinholed.sh`, `build-menubar.sh`, `make-icon.sh` |

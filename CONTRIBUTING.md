@@ -50,13 +50,22 @@ To work on the daemon alone:
 
 | Path | What it is |
 |---|---|
-| `PinholeKit/` | Swift package linked into the iOS app under test |
+| `Package.swift` | Package manifest, at the root so a remote `.package(url:)` can resolve it |
+| `PinholeKit/` | Sources of the Swift package linked into the iOS app under test |
 | `pinholed/` | macOS frame server — captures, encodes, broadcasts |
 | `PinholeMenuBar/` | Menu bar app; runs `pinholed` as a child process |
 | `scripts/` | Build and icon generation |
 
 `PinholeWire.swift` lives in `PinholeKit` but is compiled into **both** sides.
 Keep it dependency-free beyond Foundation, or the daemon build breaks.
+
+The manifest sits at the repository root rather than in `PinholeKit/` because
+SwiftPM resolves a remote package only from a manifest at the root of its
+repository — there is no subpath option for a URL dependency. Its target
+`path:` points back into `PinholeKit/Sources/PinholeKit`, so sources stay where
+the layout above puts them. Do not run `swift build` at the root: it builds for
+the host, and these sources import UIKit. Build with
+`xcodebuild -scheme PinholeKit -destination 'generic/platform=iOS Simulator'`.
 
 ## Changing the wire format
 
