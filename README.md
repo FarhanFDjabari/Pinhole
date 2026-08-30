@@ -45,23 +45,32 @@ caveat below and is what you want if you plan to change anything.
 
 ```bash
 brew tap FarhanFDjabari/pinhole https://github.com/FarhanFDjabari/Pinhole.git
+brew trust --cask FarhanFDjabari/pinhole/pinhole
 brew install --cask --no-quarantine pinhole
 open -a Pinhole
 ```
 
+That is three deliberate steps, and two of them are you overriding a safety
+check. Both are worth understanding before you run them.
+
 > [!IMPORTANT]
-> **Why `--no-quarantine` is needed, and what it costs you.**
+> **`brew trust` — Homebrew will not load a third-party cask until you say so.**
 >
-> Pinhole is ad-hoc signed, not notarized — notarization needs a paid Apple
-> Developer account, which this project otherwise does without. macOS flags
-> anything downloaded, and Gatekeeper rejects a quarantined app that is not
-> notarized, so without this flag the app will not launch.
+> Homebrew 6 refuses to run cask code from taps outside `Homebrew/*` without an
+> explicit grant, because a cask is arbitrary Ruby executed on your machine.
+> Read [`Casks/pinhole.rb`](Casks/pinhole.rb) first — it is short — and trust it
+> only if you are satisfied.
 >
-> `--no-quarantine` tells Homebrew to skip that flag, which means **macOS does
-> not verify this download for you**. You are trusting the binary on the
-> strength of this repository instead. If you would rather not, build from
-> source below — it is two commands and produces the same app, and a locally
-> built binary is never quarantined in the first place.
+> **`--no-quarantine` — macOS will not verify this download for you.**
+>
+> Pinhole is ad-hoc signed, not notarized; notarization needs a paid Apple
+> Developer account, which this project otherwise does without. Gatekeeper
+> rejects a quarantined app that is not notarized, so without this flag the app
+> will not launch at all.
+>
+> If you would rather not do either, **build from source below**. It is two
+> commands, produces the same app, needs no trust grant, and a locally built
+> binary is never quarantined in the first place.
 
 ### From source
 

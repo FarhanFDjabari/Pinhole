@@ -7,7 +7,7 @@ cask "pinhole" do
   desc "Camera for the iOS Simulator, which has none"
   homepage "https://github.com/FarhanFDjabari/Pinhole"
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "Pinhole.app"
 
