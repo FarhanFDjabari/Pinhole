@@ -16,15 +16,18 @@ struct ControlPanelView: View {
     @State private var diagnostics: String?
 
     var body: some View {
-        VStack(spacing: 16) {
-            statusBar
-            previewArea
-            sourcePicker
-            formatRow
-            footer
+        ScrollView {
+            VStack(spacing: 16) {
+                statusBar
+                previewArea
+                sourcePicker
+                formatRow
+                footer
+            }
+            .padding(20)
+            .padding(.top, 8)
+            .frame(maxWidth: .infinity)
         }
-        .padding(20)
-        .padding(.top, 8)
         .frame(minWidth: 520, minHeight: 660)
         .onAppear {
             preview.start(port: DaemonController.port)
@@ -193,15 +196,12 @@ struct ControlPanelView: View {
             }
 
             if let diagnostics {
-                ScrollView {
-                    Text(diagnostics)
-                        .font(.caption.monospaced())
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(height: 150)
-                .padding(8)
-                .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+                Text(diagnostics)
+                    .font(.caption.monospaced())
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
             }
         }
     }

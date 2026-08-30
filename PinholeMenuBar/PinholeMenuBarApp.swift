@@ -21,7 +21,7 @@ struct PinholeMenuBarApp: App {
         Window("Pinhole", id: Self.controlPanelID) {
             ControlPanelView(controller: controller)
         }
-        .windowResizability(.contentSize)
+        .windowResizability(.contentMinSize)
         .defaultPosition(.center)
     }
 
