@@ -124,7 +124,7 @@ https://github.com/FarhanFDjabari/Pinhole.git
 Or in a `Package.swift` of your own:
 
 ```swift
-.package(url: "https://github.com/FarhanFDjabari/Pinhole.git", from: "0.1.0")
+.package(url: "https://github.com/FarhanFDjabari/Pinhole.git", from: "0.1.1")
 ```
 
 Working on Pinhole itself? Use **Add Local…** and select the repository root —
