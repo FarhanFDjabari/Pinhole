@@ -38,23 +38,28 @@ turns them into real `CMSampleBuffer`s.
 
 ## Quick start
 
-**1. Install the menu bar app.**
+**1. Build and install the menu bar app.**
 
 ```bash
 ./scripts/build-menubar.sh
+cp -R .build-dev/Pinhole.app /Applications/Pinhole.app
+open -a Pinhole
 ```
 
-It builds `Pinhole.app` and, if `/Applications/Pinhole.app` already exists,
-replaces it. First run asks for camera access — approve it.
+The copy is a one-time step. Afterwards `build-menubar.sh` replaces the
+installed copy on every run — the camera grant follows the code signature, not
+the path, so it never re-prompts.
 
-The menu bar icon carries quick controls (start/stop, source, frame rate).
-**Open Control Panel…** opens a window with a live preview of the outgoing feed,
-the full source list including the QR payload field, resolution and frame rate,
-and Run Diagnostics. The preview connects to the daemon as an ordinary client on
-the same socket the Simulator uses, so what you see is the real stream rather
-than a parallel rendering of it.
+The app starts its daemon immediately and defaults to your Mac's camera, so the
+first launch asks for camera access. **Approve it.** If you miss the prompt:
+System Settings → Privacy & Security → Camera → **Pinhole**.
 
-**2. Add the package to your iOS project.**
+**2. Confirm frames are going out.**
+
+Menu bar icon → **Open Control Panel…**. A live preview of the outgoing feed
+fills the top of the window. If it shows a picture, the Mac side is done.
+
+**3. Add the package to your iOS project.**
 
 Xcode → File → Add Package Dependencies → **Add Local…** → select `PinholeKit/`.
 
@@ -63,20 +68,52 @@ that compiles your source folders, not just one. Otherwise the other targets
 compile the code and fail at the linker with undefined `PinholeKit` symbols.
 Target → General → Frameworks, Libraries, and Embedded Content → **+**.
 
-**3. Use it behind a Simulator guard.**
+**4. Use it behind a Simulator guard.**
 
 ```swift
 #if targetEnvironment(simulator)
 import PinholeKit
 
-let session = PinholeSession(source: .testPattern)
+let session = PinholeSession(source: .network(host: "127.0.0.1", port: 47009))
 session.delegate = self
 session.startRunning()
 #endif
 ```
 
 Device builds compile the guarded code away entirely and keep using
-`AVCaptureSession`.
+`AVCaptureSession`. Swap `.network` for `.testPattern` if you want frames
+without running the Mac app at all.
+
+## Using the app
+
+Pinhole lives in the menu bar. The icon shows an aperture while the daemon runs
+and a dotted circle when it is stopped.
+
+**From the menu bar icon** — the headline line is `status · :port · N clients`,
+which is the fastest way to tell whether your Simulator app actually connected.
+Below it: start/stop, the source picker, frame rate, and **Copy
+PINHOLE_SOURCE=network**.
+
+**From the control panel** (menu bar → Open Control Panel…, or `⌘O`):
+
+| Control | What it does |
+|---|---|
+| Preview | The real outgoing stream, with measured fps. The panel connects to the daemon as an ordinary client on the same socket the Simulator uses, so this is not a parallel rendering — if the preview is live, the wire is live |
+| Source | Test Pattern, Mac Camera (with a picker when you have several), Video File, Image, and a QR payload field |
+| Resolution / Frame rate | 640×360, 1280×720, 1920×1080 · 15, 24, 30, 60 fps |
+| Run Diagnostics | Camera authorization, device list, port, client count, frames sent, and the daemon's path — paste this into bug reports |
+| Refresh Cameras | Re-enumerates capture devices after plugging in a webcam |
+
+Source, resolution and frame rate persist across launches. Changing any of them
+restarts the daemon, which drops connected clients for a moment — `PinholeKit`
+reconnects on its own within a second.
+
+**Test Pattern is the source to reach for when something is wrong.** It needs no
+camera and no permission, so if the pattern streams and your webcam does not,
+the problem is the camera grant, not Pinhole.
+
+Quitting the app stops the daemon. It also exits on its own if the app dies
+without terminating it, so a crashed app never leaves port 47009 held.
 
 ## Sources
 
