@@ -41,7 +41,13 @@ echo "✅ built $APP"
 
 # Keep the installed copy in step with the build — the camera grant follows the
 # code signature, not the path, so replacing it does not re-prompt.
-if [[ -d /Applications/Pinhole.app ]]; then
+#
+# PINHOLE_NO_APP_SYNC skips this. The Homebrew formula sets it: a build there
+# runs in a sandbox that cannot write to /Applications, and installing on the
+# user's behalf mid-build is not the formula's business anyway.
+if [[ -n "${PINHOLE_NO_APP_SYNC:-}" ]]; then
+    echo "   built (app sync skipped)"
+elif [[ -d /Applications/Pinhole.app ]]; then
     pkill -f "/Applications/Pinhole.app/Contents/MacOS/Pinhole" 2>/dev/null || true
     sleep 0.5
     rm -rf /Applications/Pinhole.app
