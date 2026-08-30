@@ -1,8 +1,8 @@
 class Pinhole < Formula
   desc "Camera for the iOS Simulator, which has none"
   homepage "https://github.com/FarhanFDjabari/Pinhole"
-  url "https://github.com/FarhanFDjabari/Pinhole/archive/refs/tags/0.1.1.tar.gz"
-  sha256 "2086d9470360da40774a751435289937e182ed993601ab4438f29d9490b0e60c"
+  url "https://github.com/FarhanFDjabari/Pinhole/archive/refs/tags/0.1.2.tar.gz"
+  sha256 "82b7716754043e3c4638827115e02992270c4307c256fa66948e2eb797a20859"
   license "MIT"
 
   # Built from source rather than shipped as a cask on purpose. Pinhole is
