@@ -283,6 +283,31 @@ Length-prefixed JPEG frames, little-endian, 28-byte header
 
 720p at 30fps is roughly 2.5 MB/s over loopback.
 
+A reader must treat two cases as fatal rather than as "keep buffering": a magic
+mismatch, and a `payloadLen` above 32 MB. There is no safe resync point in the
+stream — the magic can occur inside JPEG payload bytes — so a desynced reader
+drops the connection and reconnects instead of scanning forward.
+
+## Tests
+
+```bash
+swift test
+```
+
+Runs natively on macOS, no simulator and no camera: the wire, framing and
+transport types are UIKit-free, and the UIKit-dependent sources compile out.
+Three layers:
+
+| Layer | What it covers |
+|---|---|
+| `PinholeWireTests` | Header round-trips, bit-exact timestamps, every truncation of a header, wrong magic, oversized payload lengths |
+| `PinholeFrameBufferTests` | Reassembly across arbitrary read boundaries, frame ordering, desync, the reset a reconnect performs |
+| `PinholeFrameStreamTests` | The client against a real loopback socket: undecodable JPEG, peer disconnect, desync recovery, retry while the daemon is down, `stop()` |
+| `PinholedIntegrationTests` | The real `pinholed` binary over TCP: decodable frames at the requested size, two clients at once, restart and reconnect, source switching, a second daemon on a taken port |
+
+The integration tests drive `pinholed` through its camera-free `--pattern` and
+`--qr` sources, building it via `scripts/build-pinholed.sh` if it is missing.
+
 ## Layout
 
 | Path | What it is |
