@@ -3,6 +3,10 @@
 //  CVPixelBuffer creation and drawing helpers shared by the frame producers.
 //
 
+// UIKit-only. Gated so the package still builds on macOS, where the
+// wire and framing types are unit-tested without a simulator.
+#if canImport(UIKit)
+
 import CoreGraphics
 import CoreImage
 import CoreVideo
@@ -87,3 +91,5 @@ enum PinholePixelBuffer {
         }
     }
 }
+
+#endif

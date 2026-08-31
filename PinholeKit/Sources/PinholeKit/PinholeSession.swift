@@ -6,6 +6,10 @@
 //  returns an empty list there, host webcams included).
 //
 
+// UIKit-only. Gated so the package still builds on macOS, where the
+// wire and framing types are unit-tested without a simulator.
+#if canImport(UIKit)
+
 import Foundation
 import CoreMedia
 import CoreVideo
@@ -155,3 +159,5 @@ protocol PinholeFrameProducer: AnyObject {
     func start()
     func stop()
 }
+
+#endif

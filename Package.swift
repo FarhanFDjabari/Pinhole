@@ -6,11 +6,18 @@ import PackageDescription
 // subpath option for a URL dependency. The sources stay where they belong.
 let package = Package(
     name: "PinholeKit",
-    platforms: [.iOS(.v15)],
+    // macOS is listed so `swift test` runs the wire and framing tests natively,
+    // with no simulator in the loop. The UIKit-dependent sources compile out there.
+    platforms: [.iOS(.v15), .macOS(.v12)],
     products: [
         .library(name: "PinholeKit", targets: ["PinholeKit"])
     ],
     targets: [
-        .target(name: "PinholeKit", path: "PinholeKit/Sources/PinholeKit")
+        .target(name: "PinholeKit", path: "PinholeKit/Sources/PinholeKit"),
+        .testTarget(
+            name: "PinholeKitTests",
+            dependencies: ["PinholeKit"],
+            path: "PinholeKit/Tests/PinholeKitTests"
+        )
     ]
 )
