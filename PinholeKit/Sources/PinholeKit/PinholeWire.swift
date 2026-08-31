@@ -23,7 +23,12 @@ public enum PinholeWire {
     public static let headerSize = 28
     public static let defaultPort: UInt16 = 47009
 
-    public struct Header {
+    /// Ceiling on a single frame's payload. A 4K JPEG lands well under 8 MB even
+    /// at quality 1.0; anything past this is a corrupt or hostile header, not a
+    /// frame, and must not be allowed to size an allocation.
+    public static let maxPayloadLength = 32 * 1024 * 1024
+
+    public struct Header: Equatable {
         public let payloadLength: Int
         public let width: Int
         public let height: Int
@@ -50,17 +55,38 @@ public enum PinholeWire {
         return out
     }
 
-    /// Returns nil when `data` is shorter than a full header or the magic is wrong.
-    public static func decodeHeader(_ data: Data) -> Header? {
-        guard data.count >= headerSize else { return nil }
+    /// Why this exists separately from `decodeHeader`: a reader must be able to
+    /// tell "no header yet, keep buffering" from "this stream is not PinholeWire
+    /// any more". Collapsing both into nil makes a desynced reader wait forever
+    /// on a TCP connection that is still perfectly healthy.
+    public enum HeaderParse: Equatable {
+        /// Fewer than `headerSize` bytes available. Read more and retry.
+        case incomplete
+        /// Magic mismatch, or a payload length past `maxPayloadLength`. The byte
+        /// stream is unusable from here — there is no safe resync point, since
+        /// the magic can occur inside JPEG payload bytes.
+        case invalid
+        case header(Header)
+    }
+
+    public static func parseHeader(_ data: Data) -> HeaderParse {
+        guard data.count >= headerSize else { return .incomplete }
         let bytes = [UInt8](data.prefix(headerSize))
-        guard readLE32(bytes, 0) == magic else { return nil }
-        return Header(
-            payloadLength: Int(readLE32(bytes, 4)),
+        guard readLE32(bytes, 0) == magic else { return .invalid }
+        let payloadLength = Int(readLE32(bytes, 4))
+        guard payloadLength <= maxPayloadLength else { return .invalid }
+        return .header(Header(
+            payloadLength: payloadLength,
             width: Int(readLE32(bytes, 8)),
             height: Int(readLE32(bytes, 12)),
             timestamp: Double(bitPattern: readLE64(bytes, 16))
-        )
+        ))
+    }
+
+    /// Returns nil when `data` is shorter than a full header or the magic is wrong.
+    public static func decodeHeader(_ data: Data) -> Header? {
+        guard case .header(let header) = parseHeader(data) else { return nil }
+        return header
     }
 
     private static func appendLE(_ data: inout Data, _ value: UInt32) {

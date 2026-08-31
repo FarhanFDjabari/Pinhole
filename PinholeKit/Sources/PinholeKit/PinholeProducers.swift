@@ -4,6 +4,10 @@
 //  QR source), and looped video file playback.
 //
 
+// UIKit-only. Gated so the package still builds on macOS, where the
+// wire and framing types are unit-tested without a simulator.
+#if canImport(UIKit)
+
 import AVFoundation
 import CoreVideo
 import UIKit
@@ -170,3 +174,5 @@ final class PinholeVideoProducer: NSObject, PinholeFrameProducer {
         onFrame?(buffer, CACurrentMediaTime() - startTime)
     }
 }
+
+#endif

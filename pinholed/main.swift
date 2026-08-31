@@ -112,11 +112,11 @@ let options = parseOptions()
 let server: FrameServer
 do {
     server = try FrameServer(port: options.port)
+    try server.start()
 } catch {
     FileHandle.standardError.write("failed to listen on port \(options.port): \(error)\n".data(using: .utf8)!)
     exit(1)
 }
-server.start()
 print("pinholed listening on 127.0.0.1:\(options.port)  (\(options.width)x\(options.height) @ \(options.fps)fps)")
 
 var cameraSource: CameraSource?

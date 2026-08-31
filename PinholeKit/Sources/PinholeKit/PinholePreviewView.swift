@@ -3,6 +3,10 @@
 //  Stand-in for a view hosting AVCaptureVideoPreviewLayer.
 //
 
+// UIKit-only. Gated so the package still builds on macOS, where the
+// wire and framing types are unit-tested without a simulator.
+#if canImport(UIKit)
+
 import AVFoundation
 import UIKit
 
@@ -58,3 +62,5 @@ public final class PinholePreviewView: UIView {
         displayLayer.enqueue(sampleBuffer)
     }
 }
+
+#endif
