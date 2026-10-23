@@ -347,34 +347,41 @@ system extension, or SIP disabled.
 
 Pinhole grew out of an attempt to use
 [**SimulatorCamera** by Ruslan Dautov](https://github.com/dautovri/SimulatorCamera)
-(MIT). Its design goal is the better one, and its UI is the model this app's
-control panel follows — source picker, activation status, diagnostics, frame
-counter. Credit for the feature surface and for framing the problem goes there.
+(MIT), which solves the same problem — your Mac's camera, in the iOS Simulator.
+Its UI is the model this app's control panel follows — source picker, status,
+diagnostics, frame counter. Credit for the feature surface and for framing the
+problem goes there.
 
-We could not use it, for two reasons stacked on top of each other.
+SimulatorCamera ships two pieces. A `CMIOExtension` registers a virtual camera
+with macOS. For the iOS Simulator, which cannot see CMIO cameras, it ships
+`libSimCamInject.dylib`: you load it through `DYLD_INSERT_LIBRARIES` on your
+scheme, and stock `AVCaptureDevice` / `AVCaptureSession` code receives frames
+from the Mac app or `simcamctl feed` — no imports, no `#if` guards. That is the
+better developer experience, and if it works for you, use it.
 
-**1. The signing wall.** SimulatorCamera ships a CMIOExtension, which needs the
-restricted entitlement `com.apple.developer.system-extension.install`. Apple
-only issues provisioning profiles carrying that capability to **paid** Developer
-Program teams. Ad-hoc signing applies the entitlement but AMFI rejects it at
-`posix_spawn` — the container app is killed before `main` runs:
+Pinhole exists because of what happened when we tried to build it.
+SimulatorCamera had no published release at the time, so the only route was
+building from source — and that hit a signing wall. The container app carries
+the restricted entitlement `com.apple.developer.system-extension.install`,
+which Apple only provisions for **paid** Developer Program teams. Ad-hoc signing
+applies the entitlement but AMFI rejects it at `posix_spawn`, killing the app
+before `main` runs:
 
 ```
 Launch failed. NSPOSIXErrorDomain Code=163 "Launchd job spawn failed"
 ```
 
 Strip the entitlement and the same binary launches fine, which isolates the
-cause. The only workarounds are a paid team, or disabling SIP — and on Apple
-Silicon SIP lives in the LocalPolicy boot object, so changing it means a
-recoveryOS trip and a machine-wide security downgrade.
+cause. Activating the extension from a development-signed build also needs
+`systemextensionsctl developer on`, which requires SIP disabled. SimulatorCamera
+now publishes a notarized release, which avoids all of this for anyone who
+installs it rather than building it.
 
-**2. The fatal one.** Even with the extension loaded, the iOS Simulator would
-not see it. The Simulator enumerates **zero** capture devices — a virtual camera
-is invisible to it exactly as the host's real webcam is. So SimulatorCamera's
-headline promise, *no `#if` guards anywhere in your consuming app's code*, is
-not achievable in the Simulator by any project taking that route. Frames have to
-be injected inside the app process. That is the cost Pinhole pays, and the
-reason it exists as a separate thing rather than a patch.
+Pinhole takes a route with no restricted entitlements anywhere: a Mac-side
+daemon serves frames over loopback, and a Swift package inside your app turns
+them into `CMSampleBuffer`s. Everything builds and runs ad-hoc signed. The cost
+is a `#if targetEnvironment(simulator)` shim in your app instead of stock
+AVFoundation.
 
 No code was copied. The wire format, daemon, package and UI here are written
 from scratch; what carried over is the idea of a Mac-side app with switchable
@@ -384,22 +391,14 @@ sources, and which sources are worth having.
 
 | | SimulatorCamera | Pinhole |
 |---|---|---|
-| Mechanism | CMIOExtension registers a virtual camera with macOS | TCP feed + in-app Swift package |
-| App-side code changes | none (the goal) | a `#if targetEnvironment(simulator)` shim |
-| Paid Apple Developer account | required | not needed |
-| SIP disabled | required for local dev | not needed |
-| Consumer API | stock `AVCaptureDevice` | `PinholeSession` |
-| Works in the iOS Simulator | no | yes |
+| Simulator mechanism | Injected dylib (`DYLD_INSERT_LIBRARIES`) reads frames from a shared file in `/private/tmp` | TCP feed on loopback + in-app Swift package |
+| App-side code changes | none — a scheme environment variable | a `#if targetEnvironment(simulator)` shim |
+| Consumer API | stock AVFoundation — data output, preview layer, metadata output, photo output, movie recording | `PinholeSession`, `PinholePreviewView`, `capturePhoto` |
+| Install | notarized DMG from Releases | Homebrew formula, or build from source |
+| Building from source | paid team for the extension entitlement; SIP off to activate a dev-signed extension | ad-hoc signing, no account |
 | Works for a **macOS** app or Zoom/Meet | yes — a real system camera | no |
 
-That last row is worth keeping in mind: if you ever need a virtual camera for
-*macOS* apps rather than the Simulator, SimulatorCamera's approach is the right
-one and Pinhole is not a substitute.
-
 ### Feature parity
-
-Everything of SimulatorCamera's surface that still means something without a
-system extension:
 
 | SimulatorCamera | Pinhole |
 |---|---|
@@ -407,19 +406,24 @@ system extension:
 | Mac camera | ✅ `--device`, live over the socket |
 | Video file | ✅ `--file`, looped |
 | Image | ✅ `--image` |
-| QR code with editable payload | ✅ `--qr`, payload field in the control panel |
+| QR code | ✅ `--qr`, payload field in the control panel |
 | Frame counter | ✅ frames sent, plus measured fps |
 | Run Diagnostics | ✅ Run Diagnostics — camera authorization, devices, port, clients, binary path |
-| Extension activation status | ✗ nothing to activate — replaced by daemon status and client count |
-| `simcamctl` control CLI | ✗ superseded by `pinholed`'s own flags |
-| — | ➕ **live preview** of the outgoing feed (SimulatorCamera has no preview) |
+| `simcamctl` CLI | ✅ `pinholed`'s own flags; no control channel to a running daemon |
+| Photo capture | ✅ `capturePhoto` |
+| QR decoding through `AVCaptureMetadataOutput` | ✗ no metadata output — run Vision on the delivered buffers |
+| Movie recording with sound (`AVCaptureMovieFileOutput`) | ✗ |
+| Patches for Expo / React Native camera libraries | ✗ |
+| Virtual camera for macOS apps | ✗ |
+| Extension activation status | — nothing to activate; daemon status and client count instead |
+| — | ➕ live preview of the outgoing feed in the control panel |
 | — | ➕ resolution and frame-rate switching |
 
 ## Scope
 
-Development tooling. Ad-hoc signed, not notarized, no tests, and deliberately
-not a product — `PinholeKit` only ever runs behind
-`#if targetEnvironment(simulator)`, and nothing here ships in a device build.
+Development tooling. Ad-hoc signed, not notarized, and deliberately not a
+product — `PinholeKit` only ever runs behind `#if targetEnvironment(simulator)`,
+and nothing here ships in a device build.
 
 ## Contributing
 
